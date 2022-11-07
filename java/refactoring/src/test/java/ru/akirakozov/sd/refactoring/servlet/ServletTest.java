@@ -4,6 +4,8 @@ import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import ru.akirakozov.sd.refactoring.database.ProductDatabase;
+
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -25,23 +27,28 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class ServletTest {
-    private final AddProductServlet addProductServlet = new AddProductServlet();
-    private final GetProductsServlet getProductsServlet = new GetProductsServlet();
-    private final QueryServlet queryServlet = new QueryServlet();
+    private static final ProductDatabase productDatabase = new ProductDatabase("jdbc:sqlite:test.db");
+
+    private static final AddProductServlet addProductServlet = new AddProductServlet(productDatabase);
+    private static final GetProductsServlet getProductsServlet = new GetProductsServlet(productDatabase);
+    private static final QueryServlet queryServlet = new QueryServlet(productDatabase);
 
     @BeforeClass
     public static void initDB() {
-        String sql = "CREATE TABLE IF NOT EXISTS PRODUCT" +
-                "(ID INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL," +
-                " NAME           TEXT    NOT NULL, " +
-                " PRICE          INT     NOT NULL)";
-        execQuery(sql);
+        try {
+            productDatabase.initDB();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @After
     public void cleanDB() {
-        String sql = "DELETE FROM PRODUCT WHERE 1 = 1";
-        execQuery(sql);
+        try {
+            productDatabase.cleanDB();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Test
