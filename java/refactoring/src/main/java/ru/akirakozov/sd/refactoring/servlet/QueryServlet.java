@@ -1,12 +1,12 @@
 package ru.akirakozov.sd.refactoring.servlet;
 
 import ru.akirakozov.sd.refactoring.database.ProductDatabase;
+import ru.akirakozov.sd.refactoring.utils.HTMLResponseMaker;
 
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.sql.SQLException;
 import java.util.Map;
 import java.util.function.Function;
@@ -23,35 +23,33 @@ public class QueryServlet extends HttpServlet {
 
     private final Map<String, Function<Map.Entry<String, Long>, String>> commandResultHandlers = Map.of(
         "max", result -> {
-            return "<h1>Product with max price: </h1>\n" +
-                result.getKey() + "\t" + result.getValue().toString() + "</br>";
+            return HTMLResponseMaker.makeHeader("Product with max price: ") + "\n" +
+                HTMLResponseMaker.makeRow(result.getKey(), result.getValue().toString()) + "\n";
         },
         "min", result -> {
-            return "<h1>Product with min price: </h1>\n" +
-                result.getKey() + "\t" + result.getValue().toString() + "</br>";
+            return HTMLResponseMaker.makeHeader("Product with min price: ") + "\n" +
+                HTMLResponseMaker.makeRow(result.getKey(), result.getValue().toString()) + "\n";
         },
         "sum", result -> {
-            return "Summary price: \n" + result.getValue().toString();
+            return "Summary price: \n" + result.getValue().toString() + "\n";
         },
         "count", result -> {
-            return "Number of products: \n" + result.getValue().toString();
+            return "Number of products: \n" + result.getValue().toString() + "\n";
         }
     );
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
         String command = request.getParameter("command");
-        PrintWriter writer = response.getWriter();
 
         if (!commandResultHandlers.containsKey(command)) {
-            writer.println("Unknown command: " + command);
+            response.getWriter().println("Unknown command: " + command);
         } else {
-            writer.println("<html><body>");
             try {
-                writer.println(commandResultHandlers.get(command).apply(productDatabase.calc(command)));
+                response.getWriter().println(
+                    HTMLResponseMaker.withHTMLWrapper(commandResultHandlers.get(command).apply(productDatabase.calc(command))));
             } catch (SQLException e) {
                 throw new RuntimeException(e);
             }
-            writer.println("</body></html>");
         }
  
         response.setContentType("text/html");
